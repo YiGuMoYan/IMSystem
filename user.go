@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 type User struct {
 	Name string
@@ -33,9 +36,25 @@ func (this *User) Offline() {
 	this.server.BroadCast(this, "已下线")
 }
 
+// SendMsg 给当前用户客户端发消息
+func (this *User) SendMsg(msg string) {
+	this.conn.Write([]byte(msg))
+}
+
 // DoMessage 用户处理信息
 func (this *User) DoMessage(msg string) {
-	this.server.BroadCast(this, msg)
+	if msg == "who" {
+		// 查询当前在线用户都有哪些
+		this.server.mapLock.Lock()
+		for _, user := range this.server.OnLineMap {
+			onLineMsg := fmt.Sprintf("[%s]:在线...\n", user.Name)
+			this.SendMsg(onLineMsg)
+		}
+		this.server.mapLock.Unlock()
+	} else {
+		this.server.BroadCast(this, msg)
+	}
+
 }
 
 // NewUser 创建一个用户 API
